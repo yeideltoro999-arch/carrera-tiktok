@@ -136,7 +136,7 @@
 <body>
 <div id="app">
   <div class="panel">
-    <h1>🏁 CARRERA DE AUTOS INTERACTIVA</h1>
+    <h1>🏁 CARRERA DE AUTOS DE TIKTOK</h1>
     <div class="scores" id="scores"></div>
     <div class="gift-map" id="giftMap"></div>
     <div id="track"></div>
@@ -145,14 +145,14 @@
       ❤️ Likes: <span id="likes">0</span> · 🧱 Obstáculos: <span id="obstacleCount">0</span> · ⏱️ Carrera: ~30 min
     </div>
     <div class="controls">
-      <button id="like">❤️ +25 Likes</button>
-      <button id="start">▶ Iniciar Carrera</button>
-      <button id="stop">⏹ Detener Carrera</button>
-      <button id="reset">↻ Reiniciar</button>
+      <button id="like">❤️ +25 Me gusta</button>
+      <button id="start">▶ Iniciar carrera</button>
+      <button id="stop">⏹ Detener carrera</button>
+      <button id="reset">↻ Reiniciar carrera</button>
     </div>
     <div class="hint">
       🎁 REGALOS: 🇲🇽 GG = México · 🇦🇷 Helado = Argentina · 🇺🇸 Maracas = Estados Unidos · 🇧🇷 Rosa = Brasil · 🇨🇴 TikTok = Colombia
-      · Cada regalo hace avanzar a su auto y le da +1 min de ventaja · ❤️ cada 25 likes genera obstáculos · Cada choque quita 5 HP
+      · Cada regalo hace avanzar a su auto y le da +1 minuto de ventaja · ❤️ cada 25 likes genera obstáculos · Cada choque quita 5 puntos de vida
     </div>
   </div>
 </div>
@@ -160,8 +160,8 @@
 <script>
 (() => {
   const racers = [
-    {name:"México", flag:"🇲🇽", cls:"mex", wins:0, gift:"GG 🎁"},
-    {name:"Argentina", flag:"🇦🇷", cls:"arg", wins:0, gift:"Helado 🍦"},
+    {name:"México", flag:"🇲🇽", cls:"mex", wins:0, gift:"GG de TikTok 🎁"},
+    {name:"Argentina", flag:"🇦🇷", cls:"arg", wins:0, gift:"Helado de TikTok 🍦"},
     {name:"Estados Unidos", flag:"🇺🇸", cls:"usa", wins:0, gift:"Maracas 🪇"},
     {name:"Brasil", flag:"🇧🇷", cls:"bra", wins:0, gift:"Rosa 🌹"},
     {name:"Colombia", flag:"🇨🇴", cls:"col", wins:0, gift:"TikTok 🎵"}
@@ -187,7 +187,7 @@
   document.getElementById("giftMap").innerHTML = racers.map((r,i)=>`
     <div class="gift-item">
       ${r.flag} ${r.name} → ${r.gift}
-      <br><button data-gift="${i}">🎁 DAR REGALO</button>
+      <br><button data-gift="${i}">🎁 ENVIAR REGALO</button>
     </div>`).join("");
 
   track.innerHTML = racers.map((r,i)=>`
@@ -195,7 +195,7 @@
       <div class="start"></div>
       <div class="car ${r.cls}" id="car-${i}" aria-label="${r.name}">
         <div class="health"><div class="health-fill" id="health-${i}"></div></div>
-        <div class="health-text" id="healthText-${i}">100 HP</div>
+        <div class="health-text" id="healthText-${i}">100 de vida</div>
         <div class="body"><div class="stripe"></div></div>
         <div class="roof"></div>
         <div class="wheel w1"></div><div class="wheel w2"></div>
@@ -229,7 +229,7 @@
     car.classList.add("hit");
     document.getElementById("health-"+i).style.width=hp[i]+"%";
     document.getElementById("health-"+i).style.background=hp[i]<=25?"#e94b35":hp[i]<=50?"#f0b429":"#35d07f";
-    document.getElementById("healthText-"+i).textContent=hp[i]+" HP";
+    document.getElementById("healthText-"+i).textContent=hp[i]+" de vida";
     if(hp[i]===0){
       car.style.opacity=".35";
       positions[i]=Math.max(1,positions[i]-1.5);
@@ -246,7 +246,7 @@
         if(!o.dataset.hit && Math.abs(carLeft-obstacleLeft)<3.2){
           o.dataset.hit="1";
           damageCar(i,5);
-          message.textContent="💥 ¡"+r.flag+" "+r.name+" golpeó un obstáculo! -5 HP";
+          message.textContent="💥 ¡"+r.flag+" "+r.name+" golpeó un obstáculo! -5 puntos de vida";
           o.style.opacity=".45";
         }
       });
