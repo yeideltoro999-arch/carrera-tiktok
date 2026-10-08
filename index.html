@@ -494,17 +494,27 @@
 
   function addObstacles(){
     obstacleCount++;
+
+    // Cada 25 likes, la nueva estructura aparece DELANTE de TODOS los autos.
+    // Tomamos al auto que va más adelante y colocamos el obstáculo unos puntos
+    // por delante de él, manteniéndolo antes de la meta.
+    const leaderPosition = Math.max(...positions);
+    const frontOffset = 7 + Math.random()*4;
+    const pct = Math.min(87, Math.max(10, leaderPosition + frontOffset));
+
     racers.forEach((r,i)=>{
       const holder=document.getElementById("obstacles-"+i);
       const obstacle=document.createElement("div");
       obstacle.className="obstacle";
       obstacle.dataset.damage="5";
       obstacle.textContent=["🧱","🚧","🛢️","🪨"][Math.floor(Math.random()*4)];
-      const pct=Math.min(84, 8 + obstacleCount*5.5 + Math.random()*4);
       obstacle.style.left=pct+"%";
+      obstacle.dataset.spawnPosition=String(pct);
       holder.appendChild(obstacle);
     });
+
     document.getElementById("obstacleCount").textContent=obstacleCount;
+    message.textContent="❤️ ¡25 LIKES! 🧱 ¡ESTRUCTURA AL FRENTE DE TODOS LOS AUTOS!";
   }
 
   function damageCar(i, amount=10){
