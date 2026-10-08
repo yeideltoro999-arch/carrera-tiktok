@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Carrera de Autos Interactiva</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;background:transparent;font-family:Arial,Helvetica,sans-serif}
+  body{overflow:hidden}
+  #app{
+    width:100vw; max-width:1400px; margin:auto; padding:24px;
+    color:#fff; user-select:none;
+  }
+  .panel{
+    background:#263b4d;
+    border:4px solid #d7e0e7;
+    border-radius:20px;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+    padding:18px;
+  }
+  h1{
+    margin:0 0 14px;text-align:center;
+    font-size:clamp(28px,4vw,54px);
+    letter-spacing:1px;
+    text-shadow:3px 3px 0 #172531;
+  }
+  .scores{
+    display:flex;flex-wrap:wrap;justify-content:center;gap:10px;
+    margin-bottom:18px;
+  }
+  .score{
+    min-width:150px;background:#344d61;border:2px solid #b9c7d1;
+    border-radius:12px;padding:9px 14px;text-align:center;
+    font-size:18px;font-weight:800;
+  }
+  .flag{font-size:25px;margin-right:6px}
+  #track{
+    position:relative;
+    background:#647382;
+    border:4px solid #bfcbd4;
+    border-radius:18px;
+    padding:10px 14px 10px 14px;
+    overflow:hidden;
+  }
+  .lane{
+    height:92px;position:relative;
+    border-bottom:4px dashed rgba(255,255,255,.95);
+  }
+  .lane:last-child{border-bottom:0}
+  .start{
+    position:absolute;left:0;top:0;bottom:0;width:5px;background:#fff;z-index:3;
+  }
+  .obstacle{
+    position:absolute;top:24px;width:34px;height:34px;z-index:4;
+    display:flex;align-items:center;justify-content:center;
+    font-size:28px;filter:drop-shadow(2px 3px 2px rgba(0,0,0,.4));
+    animation:obstaclePop .18s ease-out;
+  }
+  @keyframes obstaclePop{from{transform:scale(.2) rotate(-20deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+  .finish{
+    position:absolute;right:0;top:0;bottom:0;width:30px;z-index:4;
+    background:
+      linear-gradient(45deg,#fff 25%,#111 25%,#111 50%,#fff 50%,#fff 75%,#111 75%);
+    background-size:20px 20px;
+    border-left:3px solid #111;
+  }
+  .car{
+    position:absolute;left:1%;top:18px;width:100px;height:48px;
+    transition:left .12s linear;
+    z-index:5;
+    filter:drop-shadow(0 5px 3px rgba(0,0,0,.35));
+  }
+  .body{position:absolute;left:5px;top:13px;width:88px;height:29px;border-radius:12px 18px 8px 8px;background:#fff;border:3px solid #1b2630;overflow:hidden}
+  .roof{position:absolute;left:27px;top:3px;width:43px;height:19px;border-radius:12px 12px 3px 3px;background:#dce8ef;border:3px solid #1b2630;z-index:2}
+  .wheel{position:absolute;bottom:0;width:18px;height:18px;background:#111;border:3px solid #66717a;border-radius:50%;z-index:3}
+  .w1{left:17px}.w2{right:12px}
+  .stripe{position:absolute;left:0;right:0;top:0;height:100%;background:#e7e7e7}
+  /* Los colores de cada país están aplicados directamente al carro */
+  .mex .body{background:linear-gradient(90deg,#006847 0 33%,#fff 33% 66%,#ce1126 66% 100%)}
+  .arg .body{background:linear-gradient(180deg,#74acdf 0 33%,#fff 33% 66%,#74acdf 66% 100%)}
+  .usa .body{background:repeating-linear-gradient(180deg,#b22234 0 5px,#fff 5px 10px)}
+  .bra .body{background:#009c3b}
+  .bra .stripe{left:18px;right:18px;top:2px;height:25px;background:#ffdf00;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+  .bra .body::after{content:"";position:absolute;left:35px;top:8px;width:18px;height:13px;background:#002776;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);z-index:1}
+  .col .body{background:linear-gradient(180deg,#fcd116 0 50%,#003893 50% 75%,#ce1126 75% 100%)}
+  .label{color:#fff}
+
+  .gift-map{
+    display:flex;flex-wrap:wrap;justify-content:center;gap:8px;
+    margin:0 0 14px;
+  }
+  .gift-item{
+    background:#344d61;border:2px solid #b9c7d1;border-radius:12px;
+    padding:8px 12px;text-align:center;font-size:15px;font-weight:900;
+  }
+  .gift-item button{
+    margin-top:5px;padding:6px 10px;font-size:14px;border-radius:9px;
+    box-shadow:0 3px 0 #11688e;
+  }
+
+  .health{
+    position:absolute;left:5px;top:0;width:90px;height:9px;
+    border:2px solid #1d252b;border-radius:7px;background:#222;z-index:7;overflow:hidden;
+  }
+  .health-fill{
+    height:100%;width:100%;background:#35d07f;transition:width .25s ease,background .25s ease;
+  }
+  .health-text{
+    position:absolute;left:99px;top:-2px;font-size:12px;font-weight:900;
+    text-shadow:2px 2px 2px #111;z-index:7;white-space:nowrap;
+  }
+  .hit{animation:hitFlash .3s ease}
+  @keyframes hitFlash{0%,100%{filter:drop-shadow(0 5px 3px rgba(0,0,0,.35))}50%{filter:drop-shadow(0 0 10px #ff3b30) brightness(1.7)}}
+  .label{
+    position:absolute;left:108px;top:8px;font-weight:900;font-size:16px;
+    text-shadow:2px 2px 2px #111;white-space:nowrap;z-index:6
+  }
+  .controls{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:18px}
+  button{
+    border:0;border-radius:12px;padding:14px 24px;font-size:20px;font-weight:900;
+    color:#fff;background:#1c9bd1;cursor:pointer;box-shadow:0 5px 0 #11688e;
+  }
+  button:active{transform:translateY(3px);box-shadow:0 2px 0 #11688e}
+  #stop{background:#e05a47;box-shadow:0 5px 0 #9b3326}
+  #reset{background:#555f69;box-shadow:0 5px 0 #333b42}
+  #message{text-align:center;font-size:24px;font-weight:900;min-height:34px;margin-top:12px}
+  .hint{text-align:center;color:#d8e2e9;font-size:15px;margin-top:8px}
+  @media(max-width:700px){
+    #app{padding:8px}.panel{padding:10px}.score{min-width:105px;font-size:14px}
+    .lane{height:70px}.car{transform:scale(.78);transform-origin:left center;top:9px}
+    .label{left:85px;font-size:12px}.finish{width:22px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="panel">
+    <h1>🏁 CARRERA DE AUTOS INTERACTIVA</h1>
+    <div class="scores" id="scores"></div>
+    <div class="gift-map" id="giftMap"></div>
+    <div id="track"></div>
+    <div id="message">¡Listos para correr!</div>
+    <div style="text-align:center;font-size:20px;font-weight:900;margin:8px 0">
+      ❤️ Likes: <span id="likes">0</span> · 🧱 Obstáculos: <span id="obstacleCount">0</span> · ⏱️ Carrera: ~30 min
+    </div>
+    <div class="controls">
+      <button id="like">❤️ +25 Likes</button>
+      <button id="start">▶ Iniciar Carrera</button>
+      <button id="stop">⏹ Detener Carrera</button>
+      <button id="reset">↻ Reiniciar</button>
+    </div>
+    <div class="hint">
+      🎁 REGALOS: 🇲🇽 GG = México · 🇦🇷 Helado = Argentina · 🇺🇸 Maracas = Estados Unidos · 🇧🇷 Rosa = Brasil · 🇨🇴 TikTok = Colombia
+      · Cada regalo hace avanzar a su auto y le da +1 min de ventaja · ❤️ cada 25 likes genera obstáculos · Cada choque quita 5 HP
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const racers = [
+    {name:"México", flag:"🇲🇽", cls:"mex", wins:0, gift:"GG 🎁"},
+    {name:"Argentina", flag:"🇦🇷", cls:"arg", wins:0, gift:"Helado 🍦"},
+    {name:"Estados Unidos", flag:"🇺🇸", cls:"usa", wins:0, gift:"Maracas 🪇"},
+    {name:"Brasil", flag:"🇧🇷", cls:"bra", wins:0, gift:"Rosa 🌹"},
+    {name:"Colombia", flag:"🇨🇴", cls:"col", wins:0, gift:"TikTok 🎵"}
+  ];
+  let running=false, finished=false, frame=0;
+  let likes=0, obstacleCount=0, nextObstacleLikes=25;
+  // Cada regalo para un país: pequeño avance + 1 minuto de ventaja.
+  const giftAdvantages = racers.map(()=>0);
+  const maxHP=100;
+  const hp = racers.map(()=>maxHP);
+  const positions = racers.map(()=>1);
+  const raceDuration=30*60*1000;
+  let raceStartedAt=0;
+  const scores=document.getElementById("scores");
+  const track=document.getElementById("track");
+  const message=document.getElementById("message");
+
+  scores.innerHTML = racers.map((r,i)=>`
+    <div class="score" id="score-${i}">
+      ${r.name}: <span>0</span> victorias
+    </div>`).join("");
+
+  document.getElementById("giftMap").innerHTML = racers.map((r,i)=>`
+    <div class="gift-item">
+      ${r.flag} ${r.name} → ${r.gift}
+      <br><button data-gift="${i}">🎁 DAR REGALO</button>
+    </div>`).join("");
+
+  track.innerHTML = racers.map((r,i)=>`
+    <div class="lane">
+      <div class="start"></div>
+      <div class="car ${r.cls}" id="car-${i}" aria-label="${r.name}">
+        <div class="health"><div class="health-fill" id="health-${i}"></div></div>
+        <div class="health-text" id="healthText-${i}">100 HP</div>
+        <div class="body"><div class="stripe"></div></div>
+        <div class="roof"></div>
+        <div class="wheel w1"></div><div class="wheel w2"></div>
+      </div>
+      <div class="label">${r.name}</div>
+      <div class="obstacles" id="obstacles-${i}"></div>
+      <div class="finish"></div>
+    </div>`).join("");
+
+  function addObstacles(){
+    obstacleCount++;
+    racers.forEach((r,i)=>{
+      const holder=document.getElementById("obstacles-"+i);
+      const obstacle=document.createElement("div");
+      obstacle.className="obstacle";
+      obstacle.dataset.damage="5";
+      obstacle.textContent=["🧱","🚧","🛢️","🪨"][Math.floor(Math.random()*4)];
+      const pct=Math.min(84, 8 + obstacleCount*5.5 + Math.random()*4);
+      obstacle.style.left=pct+"%";
+      holder.appendChild(obstacle);
+    });
+    document.getElementById("obstacleCount").textContent=obstacleCount;
+  }
+
+  function damageCar(i, amount=10){
+    if(hp[i]<=0 || finished) return;
+    hp[i]=Math.max(0,hp[i]-amount);
+    const car=document.getElementById("car-"+i);
+    car.classList.remove("hit");
+    void car.offsetWidth;
+    car.classList.add("hit");
+    document.getElementById("health-"+i).style.width=hp[i]+"%";
+    document.getElementById("health-"+i).style.background=hp[i]<=25?"#e94b35":hp[i]<=50?"#f0b429":"#35d07f";
+    document.getElementById("healthText-"+i).textContent=hp[i]+" HP";
+    if(hp[i]===0){
+      car.style.opacity=".35";
+      positions[i]=Math.max(1,positions[i]-1.5);
+    }
+  }
+
+  function checkCollisions(){
+    racers.forEach((r,i)=>{
+      const lane=document.querySelectorAll(".lane")[i];
+      const obstacles=lane.querySelectorAll(".obstacle");
+      const carLeft=positions[i];
+      obstacles.forEach(o=>{
+        const obstacleLeft=parseFloat(o.style.left)||0;
+        if(!o.dataset.hit && Math.abs(carLeft-obstacleLeft)<3.2){
+          o.dataset.hit="1";
+          damageCar(i,5);
+          message.textContent="💥 ¡"+r.flag+" "+r.name+" golpeó un obstáculo! -5 HP";
+          o.style.opacity=".45";
+        }
+      });
+    });
+  }
+
+  function giftToCountry(i, giftName){
+    if(finished || !racers[i]) return;
+    giftName = giftName || racers[i].gift;
+
+    // Avance inmediato: entre 1.5% y 2.5% de la pista.
+    const advance = 1.5 + Math.random();
+    positions[i] = Math.min(90, positions[i] + advance);
+
+    // Cada regalo ahorra/suma 1 minuto de ventaja para ese país.
+    giftAdvantages[i] += 60 * 1000;
+
+    const minutes = Math.floor(giftAdvantages[i] / 60000);
+    message.textContent = "🎁 ¡" + giftName + " para " + racers[i].name +
+      "! +" + Math.round(advance) + "% de avance · ⏱️ " + minutes + " min de ventaja";
+
+    if(positions[i] >= 90){
+      winner(i);
+    } else {
+      render();
+    }
+  }
+
+  function addLikes(n=25){
+    likes+=n;
+    document.getElementById("likes").textContent=likes;
+    while(likes>=nextObstacleLikes){
+      addObstacles();
+      nextObstacleLikes+=25;
+    }
+    message.textContent="❤️ ¡"+likes+" likes! ¡Aparecieron obstáculos en todas las pistas!";
+  }
+
+  function render(){
+    racers.forEach((r,i)=>{
+      document.getElementById("car-"+i).style.left = Math.min(92,positions[i]) + "%";
+      document.querySelector("#score-"+i+" span:last-child").textContent = r.wins;
+    });
+    checkCollisions();
+  }
+
+  function resetPositions(){
+    for(let i=0;i<positions.length;i++){ positions[i]=1; hp[i]=maxHP; }
+    finished=false;
+    likes=0; obstacleCount=0; nextObstacleLikes=25;
+    for(let i=0;i<giftAdvantages.length;i++) giftAdvantages[i]=0;
+    document.getElementById("likes").textContent="0";
+    document.getElementById("obstacleCount").textContent="0";
+    document.querySelectorAll(".obstacles").forEach(el=>el.innerHTML="");
+    racers.forEach((r,i)=>{
+      document.getElementById("health-"+i).style.width="100%";
+      document.getElementById("health-"+i).style.background="#35d07f";
+      document.getElementById("healthText-"+i).textContent="100 HP";
+      document.getElementById("car-"+i).style.opacity="1";
+    });
+    render();
+  }
+
+  function winner(i){
+    if(finished || hp[i]<=0) return;
+    finished=true; running=false;
+    racers[i].wins++;
+    message.textContent = "🏆 ¡"+racers[i].flag+" "+racers[i].name+" GANA LA CARRERA!";
+    render();
+  }
+
+  function tick(){
+    if(!running) return;
+    const elapsed=performance.now()-raceStartedAt;
+    const remaining=Math.max(0,raceDuration-elapsed);
+
+    racers.forEach((r,i)=>{
+      if(hp[i]<=0) return;
+      // Average speed is calibrated so a normal race takes roughly 30 minutes.
+      // Randomness keeps the positions unpredictable.
+      const base=0.00435;
+      const variation=(Math.random()-0.42)*0.004;
+      positions[i] += Math.max(0.001,base+variation);
+      if(Math.random()<0.0025) positions[i] -= 0.7;
+
+      // La ventaja acumulada por regalos hace que ese país necesite menos tiempo
+      // efectivo para completar la carrera.
+      const effectiveElapsed = elapsed + giftAdvantages[i];
+      if(effectiveElapsed >= raceDuration) positions[i] = Math.min(90, positions[i] + 0.12);
+
+      if(positions[i]>=90) winner(i);
+    });
+
+    // Los regalos también pueden hacer que un país gane al cumplirse su tiempo efectivo.
+    if(!finished && remaining<=0){
+      const alive=racers.map((r,i)=>hp[i]>0?i:-1).filter(i=>i>=0);
+      if(alive.length){
+        alive.sort((a,b)=>{
+          const pa=positions[a] + giftAdvantages[a]/60000 * 0.15;
+          const pb=positions[b] + giftAdvantages[b]/60000 * 0.15;
+          return pb-pa;
+        });
+        winner(alive[0]);
+        message.textContent="⏱️ ¡Se acabó el tiempo! Gana "+racers[alive[0]].name+" por posición.";
+      }else{
+        finished=true; running=false;
+        message.textContent="💥 ¡Todos los autos quedaron fuera!";
+      }
+    }
+
+    render();
+    if(running) frame=requestAnimationFrame(tick);
+  }
+
+  function start(){
+    if(running) return;
+    if(finished) resetPositions();
+    running=true; raceStartedAt=performance.now(); message.textContent="🔥 ¡LA CARRERA ESTÁ EN MARCHA! (≈30 min)";
+    cancelAnimationFrame(frame); frame=requestAnimationFrame(tick);
+  }
+
+  function stop(){
+    running=false; cancelAnimationFrame(frame);
+    if(!finished) message.textContent="⏸ Carrera detenida";
+  }
+
+  function turbo(i){
+    if(finished) return;
+    positions[i]=Math.min(90,positions[i]+2.5+Math.random()*2.5);
+    if(positions[i]>=90) winner(i);
+    else message.textContent="⚡ ¡Turbo para "+racers[i].flag+" "+racers[i].name+"!";
+    render();
+  }
+
+  document.querySelectorAll("[data-gift]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const i=Number(btn.dataset.gift);
+      giftToCountry(i, racers[i].gift);
+    });
+  });
+
+  document.getElementById("like").addEventListener("click",()=>addLikes(25));
+  document.getElementById("start").addEventListener("click",start);
+  document.getElementById("stop").addEventListener("click",stop);
+  document.getElementById("reset").addEventListener("click",()=>{stop();resetPositions();message.textContent="¡Listos para correr!";});
+  document.addEventListener("keydown",e=>{
+    if(e.code==="Space"){e.preventDefault(); running?stop():start(); return;}
+    if(e.key.toLowerCase()==="l"){addLikes(25); return;}
+    const n=Number(e.key);
+    if(n>=1 && n<=5) turbo(n-1);
+  });
+  render();
+})();
+</script>
+</body>
+</html>
