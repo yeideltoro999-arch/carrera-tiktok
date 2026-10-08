@@ -838,12 +838,39 @@
   // toca el icono 🔇 de la esquina superior derecha una sola vez.
   setTimeout(()=>startMusic(),900);
 
-  // CONTROL REMOTO PARA TIKTOK LIVE STUDIO
-  // Usa un servidor local en tu PC para comunicar Chrome <-> LIVE Studio.
-  // Esto permite mantener la URL pública de GitHub Pages en LIVE Studio.
-  const CONTROL_URL = "http://127.0.0.1:3210";
-  let lastCommandId = 0;
-  let controlPolling = null;
+  // CONTROL REMOTO POR WEBSOCKET PÚBLICO
+  // Funciona entre Chrome y TikTok LIVE Studio sin localhost ni instalación.
+  const CONTROL_WS_URL = "wss://router.metapage.io/carrera-tiktok-goma6-control-7f3a91c2";
+  let controlSocket = null;
+  let controlReconnectTimer = null;
+
+  function connectControl(){
+    try{
+      controlSocket = new WebSocket(CONTROL_WS_URL);
+      controlSocket.onopen = ()=>{
+        document.title = "🏁 Carrera conectada";
+      };
+      controlSocket.onmessage = (event)=>{
+        try{
+          applyControlCommand(JSON.parse(event.data));
+        }catch(e){}
+      };
+      controlSocket.onclose = ()=>{
+        clearTimeout(controlReconnectTimer);
+        controlReconnectTimer = setTimeout(connectControl,1500);
+      };
+      controlSocket.onerror = ()=>{
+        try{ controlSocket.close(); }catch(e){}
+      };
+    }catch(e){
+      clearTimeout(controlReconnectTimer);
+      controlReconnectTimer = setTimeout(connectControl,2000);
+    }
+  }
+
+  function sendControlAck(type){
+    // reservado para futuras confirmaciones
+  }
 
   function applyControlCommand(data){
     if(!data) return;
@@ -855,9 +882,7 @@
         stop(); resetPositions(); message.textContent="¡Carrera reiniciada!";
         break;
       case "gift":
-        if(Number.isInteger(idx) && idx>=0 && idx<racers.length){
-          giftToCountry(idx, racers[idx].gift);
-        }
+        if(Number.isInteger(idx) && idx>=0 && idx<racers.length) giftToCountry(idx, racers[idx].gift);
         break;
       case "like": addLikes(Number(data.amount)||25); break;
       case "turbo":
@@ -866,43 +891,7 @@
     }
   }
 
-  async function pollLocalControl(){
-    try{
-      const res = await fetch(CONTROL_URL+"/events?after="+lastCommandId, {
-        cache:"no-store",
-        mode:"cors"
-      });
-      if(!res.ok) return;
-      const payload = await res.json();
-      (payload.events || []).forEach(ev=>{
-        lastCommandId = Math.max(lastCommandId, Number(ev.id)||0);
-        applyControlCommand(ev.data);
-      });
-    }catch(e){
-      // El servidor local puede estar apagado; el juego sigue funcionando.
-    }
-  }
-
-  async function initLocalControl(){
-    try{
-      const res = await fetch(CONTROL_URL+"/events?init=1", {cache:"no-store",mode:"cors"});
-      if(res.ok){
-        const payload = await res.json();
-        lastCommandId = Number(payload.latest)||0;
-      }
-    }catch(e){}
-    await pollLocalControl();
-    controlPolling = setInterval(pollLocalControl, 180);
-  }
-
-  initLocalControl();
-
-  // Respaldo si dos pestañas están en el mismo navegador/origen.
-  try{
-    const controlChannel = new BroadcastChannel("carrera-tiktok-control");
-    controlChannel.onmessage = (event)=>applyControlCommand(event.data || {});
-  }catch(e){}
-
+  connectControl();
   render();
 
   // La carrera pública sigue arrancando automáticamente.
