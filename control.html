@@ -49,32 +49,44 @@ button:active{transform:translateY(3px);box-shadow:0 1px 0 #222}.full{grid-colum
 <div class="hint">1. Abre este panel. 2. En TikTok LIVE Studio usa como fuente la URL local de la carrera. 3. Deja esta ventana abierta durante el LIVE. Los botones mandan órdenes al servidor local.</div>
 </div>
 <script>
+const WS_URL="wss://router.metapage.io/carrera-tiktok-goma6-control-7f3a91c2";
 const statusEl=document.getElementById("status");
-async function check(){
- try{
-   const r=await fetch("/health",{cache:"no-store"});
-   if(!r.ok) throw new Error();
-   statusEl.textContent="🟢 SERVIDOR CONECTADO — LISTO PARA CONTROLAR";
-   statusEl.className="status ok";
- }catch(e){
-   statusEl.textContent="🔴 SERVIDOR NO CONECTADO";
-   statusEl.className="status bad";
- }
+let socket=null, retry=null;
+
+function setStatus(textValue, ok){
+  statusEl.textContent=textValue;
+  statusEl.className="status "+(ok?"ok":"bad");
 }
-async function send(data){
- try{
-   const r=await fetch("/command",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
-   if(!r.ok) throw new Error();
-   statusEl.textContent="✅ ORDEN ENVIADA";
-   statusEl.className="status ok";
-   setTimeout(check,500);
- }catch(e){
-   statusEl.textContent="🔴 NO SE PUDO ENVIAR — ¿ESTÁ ABIERTO start-control.bat?";
-   statusEl.className="status bad";
- }
+
+function connect(){
+  try{
+    setStatus("⏳ CONECTANDO CON LA CARRERA...",false);
+    socket=new WebSocket(WS_URL);
+    socket.onopen=()=>setStatus("🟢 CONTROL CONECTADO A LA CARRERA",true);
+    socket.onclose=()=>{
+      setStatus("🔴 CONTROL DESCONECTADO — REINTENTANDO...",false);
+      clearTimeout(retry); retry=setTimeout(connect,1200);
+    };
+    socket.onerror=()=>{ try{socket.close()}catch(e){} };
+  }catch(e){
+    setStatus("🔴 ERROR DE CONEXIÓN — REINTENTANDO...",false);
+    clearTimeout(retry); retry=setTimeout(connect,1800);
+  }
+}
+
+function send(data){
+  if(!socket || socket.readyState!==WebSocket.OPEN){
+    setStatus("🔴 LA CARRERA NO ESTÁ CONECTADA",false);
+    return;
+  }
+  socket.send(JSON.stringify(data));
+  setStatus("✅ ORDEN ENVIADA",true);
+  setTimeout(()=>{
+    if(socket && socket.readyState===WebSocket.OPEN) setStatus("🟢 CONTROL CONECTADO A LA CARRERA",true);
+  },800);
 }
 function gift(i){send({type:"gift",index:i})}
 function turbo(i){send({type:"turbo",index:i})}
-check();setInterval(check,3000);
-</script>
+connect();
+</script></script>
 </body></html>
