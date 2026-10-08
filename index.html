@@ -32,11 +32,65 @@
     margin-bottom:8px;
   }
   .score{
-    min-width:120px;background:#344d61;border:2px solid #b9c7d1;
+    min-width:150px;background:#344d61;border:2px solid #b9c7d1;
     border-radius:10px;padding:6px 9px;text-align:center;
-    font-size:14px;font-weight:800;
+    font-size:14px;font-weight:900;
+    transition:transform .18s ease,background .18s ease;
+  }
+  .score.leader{transform:scale(1.04);box-shadow:0 0 0 2px rgba(255,255,255,.35),0 0 14px rgba(255,255,255,.18)}
+  .score.hot{animation:rankPulse .45s ease}
+  @keyframes rankPulse{50%{transform:scale(1.08)}}
+
+  .track-title{
+    text-align:center;font-size:14px;font-weight:900;letter-spacing:.5px;
+    margin:2px 0 5px;
+  }
+  .lane{
+    height:76px;position:relative;
+    border-bottom:3px dashed rgba(255,255,255,.95);
+    background:linear-gradient(90deg,rgba(255,255,255,.08),transparent 30%);
+  }
+  .lane.mex-lane{border-left:7px solid #006847}
+  .lane.arg-lane{border-left:7px solid #74acdf}
+  .lane.usa-lane{border-left:7px solid #b22234}
+  .lane.bra-lane{border-left:7px solid #ffdf00}
+  .lane.col-lane{border-left:7px solid #fcd116}
+  .lane-info{
+    position:absolute;left:8px;top:9px;width:132px;z-index:8;
+    background:rgba(20,30,38,.82);border:2px solid rgba(255,255,255,.5);
+    border-radius:11px;padding:5px 7px;text-align:center;
+    box-shadow:0 4px 10px rgba(0,0,0,.25);
+  }
+  .lane-rank{font-size:12px;font-weight:900;display:block}
+  .lane-country{font-size:14px;font-weight:900;display:block;white-space:nowrap}
+  .lane-progress{
+    height:5px;background:#17212a;border-radius:5px;overflow:hidden;margin-top:4px;
+  }
+  .lane-progress-fill{height:100%;width:1%;transition:width .12s linear}
+  .car .country-tag{
+    position:absolute;left:6px;top:-20px;z-index:9;
+    background:#101820;border:2px solid #fff;border-radius:7px;
+    padding:2px 6px;font-size:11px;font-weight:900;
+    white-space:nowrap;box-shadow:0 3px 7px rgba(0,0,0,.35);
+  }
+  .position-chip{
+    position:absolute;right:2px;top:2px;z-index:8;
+    min-width:30px;padding:3px 6px;border-radius:999px;
+    background:#111c24;border:2px solid #fff;
+    font-size:12px;font-weight:900;text-align:center;
+  }
+  .race-event{
+    text-align:center;min-height:24px;font-size:16px;font-weight:900;
+    margin-top:4px;color:#fff;text-shadow:2px 2px 2px #111;
+  }
+  .competitive-note{
+    text-align:center;font-size:11px;color:#e9f0f5;margin-top:3px;
   }
   .flag{font-size:25px;margin-right:6px}
+  :root{
+    --country-0:#006847;--country-1:#74acdf;--country-2:#b22234;
+    --country-3:#ffdf00;--country-4:#fcd116;
+  }
   #track{
     position:relative;
     background:#647382;
@@ -131,7 +185,9 @@
   @media(max-width:700px){
     #app{padding:5px}.panel{padding:6px}.score{min-width:95px;font-size:12px}
     .lane{height:64px}.car{transform:scale(.72);transform-origin:left center;top:7px}
-    .label{left:76px;font-size:11px}.finish{width:20px}
+    .lane-info{left:5px;top:7px;width:108px;padding:4px 5px}
+    .lane-country{font-size:11px}.lane-rank{font-size:10px}
+    .country-tag{font-size:10px}.finish{width:20px}
   }
   @media(min-aspect-ratio:3/2){
     .lane{height:66px}
@@ -149,8 +205,10 @@
     <h1>🏁 CARRERA DE AUTOS DE TIKTOK</h1>
     <div class="scores" id="scores"></div>
     <div class="gift-map" id="giftMap"></div>
+    <div class="track-title">🏎️ ¡TODOS CONTRA TODOS! — LA POSICIÓN CAMBIA EN TIEMPO REAL</div>
     <div id="track"></div>
-    <div id="message">¡Listos para correr!</div>
+    <div class="race-event" id="message">¡Listos para correr!</div>
+    <div class="competitive-note">⚡ Velocidades aleatorias · 🔥 adelantamientos · 🧱 obstáculos · 🎁 los regalos dan ventaja real</div>
     <div style="text-align:center;font-size:20px;font-weight:900;margin:8px 0">
       ❤️ Likes: <span id="likes">0</span> · 🧱 Obstáculos: <span id="obstacleCount">0</span> · ⏱️ Carrera: ~30 min
     </div>
@@ -184,6 +242,8 @@
   const hp = racers.map(()=>maxHP);
   const positions = racers.map(()=>1);
   const raceDuration=30*60*1000;
+  const burstUntil = racers.map(()=>0);
+  const lastRanks = racers.map(()=>5);
   let raceStartedAt=0;
   const scores=document.getElementById("scores");
   const track=document.getElementById("track");
@@ -201,16 +261,22 @@
     </div>`).join("");
 
   track.innerHTML = racers.map((r,i)=>`
-    <div class="lane">
+    <div class="lane ${r.cls}-lane" data-racer="${i}">
       <div class="start"></div>
+      <div class="lane-info">
+        <span class="lane-rank" id="laneRank-${i}">5.º</span>
+        <span class="lane-country">${r.flag} ${r.name}</span>
+        <div class="lane-progress"><div class="lane-progress-fill" id="progress-${i}" style="background:var(--country-${i},#fff)"></div></div>
+      </div>
       <div class="car ${r.cls}" id="car-${i}" aria-label="${r.name}">
+        <div class="position-chip" id="positionChip-${i}">5.º</div>
+        <div class="country-tag">${r.flag} ${r.name}</div>
         <div class="health"><div class="health-fill" id="health-${i}"></div></div>
         <div class="health-text" id="healthText-${i}">100 de vida</div>
         <div class="body"><div class="stripe"></div></div>
         <div class="roof"></div>
         <div class="wheel w1"></div><div class="wheel w2"></div>
       </div>
-      <div class="label">${r.name}</div>
       <div class="obstacles" id="obstacles-${i}"></div>
       <div class="finish"></div>
     </div>`).join("");
@@ -296,9 +362,25 @@
   }
 
   function render(){
+    const order=[...racers.keys()].sort((a,b)=>positions[b]-positions[a]);
     racers.forEach((r,i)=>{
-      document.getElementById("car-"+i).style.left = Math.min(92,positions[i]) + "%";
-      document.querySelector("#score-"+i+" span:last-child").textContent = r.wins;
+      const rank=order.indexOf(i)+1;
+      const pct=Math.max(1,Math.min(90,positions[i]));
+      const car=document.getElementById("car-"+i);
+      car.style.left = pct + "%";
+      document.getElementById("progress-"+i).style.width=Math.min(100,pct)+"%";
+      document.getElementById("laneRank-"+i).textContent=rank+".º";
+      document.getElementById("positionChip-"+i).textContent=rank+".º";
+
+      const card=document.getElementById("score-"+i);
+      card.textContent=(rank===1?"👑 ":rank===2?"🥈 ":rank===3?"🥉 ":"")+"#"+rank+" "+r.flag+" "+r.name+" · "+Math.round(pct)+"%";
+      card.classList.toggle("leader",rank===1);
+      if(lastRanks[i]!==rank){
+        card.classList.remove("hot"); void card.offsetWidth; card.classList.add("hot");
+      }
+    });
+    order.forEach((i)=>{
+      lastRanks[i]=order.indexOf(i)+1;
     });
     checkCollisions();
   }
@@ -314,7 +396,7 @@
     racers.forEach((r,i)=>{
       document.getElementById("health-"+i).style.width="100%";
       document.getElementById("health-"+i).style.background="#35d07f";
-      document.getElementById("healthText-"+i).textContent="100 HP";
+      document.getElementById("healthText-"+i).textContent="100 de vida";
       document.getElementById("car-"+i).style.opacity="1";
     });
     render();
@@ -337,10 +419,24 @@
       if(hp[i]<=0) return;
       // Average speed is calibrated so a normal race takes roughly 30 minutes.
       // Randomness keeps the positions unpredictable.
-      const base=0.00435;
+      let base=0.00435;
       const variation=(Math.random()-0.42)*0.004;
+
+      // Un pequeño "turbo" aleatorio crea adelantamientos visibles.
+      if(performance.now() < burstUntil[i]) base += 0.0030;
+      if(Math.random()<0.0018) {
+        burstUntil[i]=performance.now()+1400+Math.random()*1400;
+        message.textContent="🔥 ¡"+r.flag+" "+r.name+" ENTRA EN MODO TURBO!";
+      }
+
+      // Recuperación suave para que los últimos no queden demasiado lejos.
+      const sortedNow=[...positions].sort((a,b)=>b-a);
+      const rankNow=sortedNow.indexOf(positions[i])+1;
+      if(rankNow>=4) base+=0.00055;
+      if(rankNow===5) base+=0.00025;
+
       positions[i] += Math.max(0.001,base+variation);
-      if(Math.random()<0.0025) positions[i] -= 0.7;
+      if(Math.random()<0.0022) positions[i] -= 0.55;
 
       // La ventaja acumulada por regalos hace que ese país necesite menos tiempo
       // efectivo para completar la carrera.
