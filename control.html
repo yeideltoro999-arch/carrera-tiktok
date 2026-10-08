@@ -1,10 +1,80 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Control de Carrera TikTok</title>
-<style>*{box-sizing:border-box}body{margin:0;background:#101820;color:#fff;font-family:Arial,sans-serif;padding:18px}h1{text-align:center;margin:0 0 8px}.status{text-align:center;padding:10px;border-radius:10px;background:#263b4d;margin-bottom:14px;font-weight:900}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:700px;margin:auto}button{border:0;border-radius:12px;padding:15px 10px;color:#fff;font-size:17px;font-weight:900;cursor:pointer;box-shadow:0 4px 0 #333}button:active{transform:translateY(3px);box-shadow:0 1px 0 #333}.start{background:#18a957}.stop{background:#e04f3e}.reset{background:#59636d}.gift{background:#168ac0}.full{grid-column:1/-1}.title{max-width:700px;margin:18px auto 8px;font-weight:900;font-size:18px}.small{font-size:13px;text-align:center;opacity:.8;margin-top:15px}</style></head>
-<body><h1>🎮 CONTROL DE CARRERA</h1><div class="status" id="status">🟢 Panel conectado</div>
-<div class="grid"><button class="start full" onclick="send({type:'start'})">▶ INICIAR CARRERA</button><button class="stop" onclick="send({type:'stop'})">⏸ DETENER</button><button class="reset" onclick="send({type:'reset'})">🔄 REINICIAR</button></div>
-<div class="title">🎁 REGALOS — pulsa cuando recibas el regalo</div><div class="grid">
-<button class="gift" onclick="gift(0)">🇲🇽 GG → MÉXICO</button><button class="gift" onclick="gift(1)">🇦🇷 🍦 HELADO → ARGENTINA</button><button class="gift" onclick="gift(2)">🇺🇸 🪇 MARACAS → EE. UU.</button><button class="gift" onclick="gift(3)">🇧🇷 🌹 ROSA → BRASIL</button><button class="gift" onclick="gift(4)">🇨🇴 🎵 TIKTOK → COLOMBIA</button><button class="gift" onclick="send({type:'like',amount:25})">❤️ +25 ME GUSTA</button></div>
-<div class="title">⚡ TURBOS MANUALES</div><div class="grid"><button class="gift" onclick="send({type:'turbo',index:0})">🇲🇽 TURBO</button><button class="gift" onclick="send({type:'turbo',index:1})">🇦🇷 TURBO</button><button class="gift" onclick="send({type:'turbo',index:2})">🇺🇸 TURBO</button><button class="gift" onclick="send({type:'turbo',index:3})">🇧🇷 TURBO</button><button class="gift" onclick="send({type:'turbo',index:4})">🇨🇴 TURBO</button></div>
-<div class="small">Deja abierta esta página mientras haces el LIVE. La carrera sigue en tu fuente de TikTok LIVE Studio.</div>
-<script>const channel=new BroadcastChannel("carrera-tiktok-control");function send(data){channel.postMessage(data);document.getElementById("status").textContent="✅ Orden enviada";setTimeout(()=>document.getElementById("status").textContent="🟢 Panel conectado",700)}function gift(i){send({type:"gift",index:i})}</script></body></html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Control de Carrera TikTok</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0d141b;color:#fff;font-family:Arial,sans-serif;padding:18px}
+.wrap{max-width:760px;margin:auto}h1{text-align:center;margin:0 0 6px;font-size:28px}
+.sub{text-align:center;opacity:.82;margin-bottom:14px}.status{padding:11px;border-radius:12px;background:#263b4d;text-align:center;font-weight:900;margin-bottom:15px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+button{border:0;border-radius:14px;padding:16px 10px;color:#fff;font-size:17px;font-weight:900;cursor:pointer;box-shadow:0 4px 0 #222}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 #222}.full{grid-column:1/-1}
+.start{background:#16a35a}.stop{background:#db4738}.reset{background:#59636d}.gift{background:#117eb1}.turbo{background:#8a48c7}.like{background:#d33d7a}
+.section{font-size:18px;font-weight:900;margin:18px 0 8px}.hint{text-align:center;font-size:13px;opacity:.75;margin-top:18px;line-height:1.4}
+.ok{background:#174e34}.bad{background:#5a2525}
+@media(max-width:560px){button{font-size:15px;padding:14px 8px}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>🎮 CONTROL DE CARRERA</h1>
+<div class="sub">Este panel controla directamente la carrera que está dentro de TikTok LIVE Studio.</div>
+<div class="status" id="status">⏳ Comprobando servidor...</div>
+
+<div class="grid">
+<button class="start full" onclick="send({type:'start'})">▶ INICIAR CARRERA</button>
+<button class="stop" onclick="send({type:'stop'})">⏸ DETENER</button>
+<button class="reset" onclick="send({type:'reset'})">🔄 REINICIAR</button>
+</div>
+
+<div class="section">🎁 REGALOS</div>
+<div class="grid">
+<button class="gift" onclick="gift(0)">🇲🇽 GG → MÉXICO</button>
+<button class="gift" onclick="gift(1)">🇦🇷 🍦 HELADO → ARGENTINA</button>
+<button class="gift" onclick="gift(2)">🇺🇸 🪇 MARACAS → EE. UU.</button>
+<button class="gift" onclick="gift(3)">🇧🇷 🌹 ROSA → BRASIL</button>
+<button class="gift" onclick="gift(4)">🇨🇴 🎵 TIKTOK → COLOMBIA</button>
+<button class="like" onclick="send({type:'like',amount:25})">❤️ +25 ME GUSTA</button>
+</div>
+
+<div class="section">⚡ TURBOS MANUALES</div>
+<div class="grid">
+<button class="turbo" onclick="turbo(0)">🇲🇽 TURBO</button>
+<button class="turbo" onclick="turbo(1)">🇦🇷 TURBO</button>
+<button class="turbo" onclick="turbo(2)">🇺🇸 TURBO</button>
+<button class="turbo" onclick="turbo(3)">🇧🇷 TURBO</button>
+<button class="turbo" onclick="turbo(4)">🇨🇴 TURBO</button>
+</div>
+
+<div class="hint">1. Abre este panel. 2. En TikTok LIVE Studio usa como fuente la URL local de la carrera. 3. Deja esta ventana abierta durante el LIVE. Los botones mandan órdenes al servidor local.</div>
+</div>
+<script>
+const statusEl=document.getElementById("status");
+async function check(){
+ try{
+   const r=await fetch("/health",{cache:"no-store"});
+   if(!r.ok) throw new Error();
+   statusEl.textContent="🟢 SERVIDOR CONECTADO — LISTO PARA CONTROLAR";
+   statusEl.className="status ok";
+ }catch(e){
+   statusEl.textContent="🔴 SERVIDOR NO CONECTADO";
+   statusEl.className="status bad";
+ }
+}
+async function send(data){
+ try{
+   const r=await fetch("/command",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+   if(!r.ok) throw new Error();
+   statusEl.textContent="✅ ORDEN ENVIADA";
+   statusEl.className="status ok";
+   setTimeout(check,500);
+ }catch(e){
+   statusEl.textContent="🔴 NO SE PUDO ENVIAR — ¿ESTÁ ABIERTO start-control.bat?";
+   statusEl.className="status bad";
+ }
+}
+function gift(i){send({type:"gift",index:i})}
+function turbo(i){send({type:"turbo",index:i})}
+check();setInterval(check,3000);
+</script>
+</body></html>
