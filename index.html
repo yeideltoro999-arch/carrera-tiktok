@@ -62,7 +62,7 @@
     box-shadow:0 4px 10px rgba(0,0,0,.25);
   }
   .lane-rank{font-size:12px;font-weight:900;display:block}
-  .lane-country{font-size:14px;font-weight:900;display:block;white-space:nowrap}
+  .lane-country{font-size:26px;font-weight:900;display:block;white-space:nowrap;line-height:1}
   .lane-progress{
     height:5px;background:#17212a;border-radius:5px;overflow:hidden;margin-top:4px;
   }
@@ -213,7 +213,7 @@
     #app{padding:5px}.panel{padding:6px}.score{min-width:95px;font-size:12px}
     .lane{height:64px}.car{transform:scale(.72);transform-origin:left center;top:7px}
     .lane-info{left:5px;top:7px;width:108px;padding:4px 5px}
-    .lane-country{font-size:11px}.lane-rank{font-size:10px}
+    .lane-country{font-size:22px}.lane-rank{font-size:10px}
     .country-tag{font-size:10px}.finish{width:20px}
   }
   @media(min-aspect-ratio:3/2){
@@ -319,7 +319,7 @@
     border-radius:7px;
   }
   .lane-rank{font-size:9px}
-  .lane-country{font-size:9px}
+  .lane-country{font-size:20px}
   .lane-progress{height:3px;margin-top:2px}
   .car{
     width:86px;height:42px;
@@ -328,11 +328,11 @@
     transform-origin:left center;
   }
   .car .country-tag{
-    left:4px;top:-17px;
+    left:22px;top:-17px;
     padding:1px 3px;
     border-width:1px;
     border-radius:5px;
-    font-size:8px;
+    font-size:18px;
   }
   .position-chip{
     right:0;top:0;
@@ -430,7 +430,7 @@
       <button id="reset">↻ Reiniciar carrera</button>
     </div>
     <div class="hint">
-      🎁 REGALOS: 🇲🇽 GG = México · 🇦🇷 Helado = Argentina · 🇺🇸 Maracas = Estados Unidos · 🇧🇷 Rosa = Brasil · 🇨🇴 TikTok = Colombia
+      🎁 REGALOS: 🇲🇽 GG · 🇦🇷 Helado · 🇺🇸 Maracas · 🇧🇷 Rosa · 🇨🇴 TikTok
       · Cada regalo hace avanzar a su auto y le da +1 minuto de ventaja · ❤️ cada 25 likes genera obstáculos · Cada choque quita 5 puntos de vida
     </div>
   </div>
@@ -462,12 +462,12 @@
 
   scores.innerHTML = racers.map((r,i)=>`
     <div class="score" id="score-${i}">
-      ${r.name}: <span>0</span> victorias
+      ${r.flag} <span>0</span> victorias
     </div>`).join("");
 
   document.getElementById("giftMap").innerHTML = racers.map((r,i)=>`
     <div class="gift-item">
-      ${r.flag} ${r.name} → ${r.gift}
+      ${r.flag} → ${r.gift}
       <br><button data-gift="${i}">🎁 ENVIAR REGALO</button>
     </div>`).join("");
 
@@ -476,12 +476,12 @@
       <div class="start"></div>
       <div class="lane-info">
         <span class="lane-rank" id="laneRank-${i}">5.º</span>
-        <span class="lane-country">${r.flag} ${r.name}</span>
+        <span class="lane-country">${r.flag}</span>
         <div class="lane-progress"><div class="lane-progress-fill" id="progress-${i}" style="background:var(--country-${i},#fff)"></div></div>
       </div>
       <div class="car ${r.cls}" id="car-${i}" aria-label="${r.name}">
         <div class="position-chip" id="positionChip-${i}">5.º</div>
-        <div class="country-tag">${r.flag} ${r.name}</div>
+        <div class="country-tag" title="${r.name}">${r.flag}</div>
         <div class="health"><div class="health-fill" id="health-${i}"></div></div>
         <div class="health-text" id="healthText-${i}">100 de vida</div>
         <div class="body"><div class="stripe"></div></div>
@@ -594,7 +594,7 @@
       document.getElementById("positionChip-"+i).textContent=rank+".º";
 
       const card=document.getElementById("score-"+i);
-      card.textContent=(rank===1?"👑 ":rank===2?"🥈 ":rank===3?"🥉 ":"")+"#"+rank+" "+r.flag+" "+r.name+" · "+Math.round(pct)+"%";
+      card.textContent=(rank===1?"👑 ":rank===2?"🥈 ":rank===3?"🥉 ":"")+"#"+rank+" "+r.flag+" · "+Math.round(pct)+"%";
       card.classList.toggle("leader",rank===1);
       if(lastRanks[i]!==rank){
         card.classList.remove("hot"); void card.offsetWidth; card.classList.add("hot");
@@ -627,7 +627,7 @@
     if(finished || hp[i]<=0) return;
     finished=true; running=false;
     racers[i].wins++;
-    message.textContent = "🏆 ¡"+racers[i].flag+" "+racers[i].name+" GANA LA CARRERA!";
+    message.textContent = "🏆 ¡"+racers[i].flag+" GANA LA CARRERA!";
     render();
   }
 
@@ -677,7 +677,7 @@
           return pb-pa;
         });
         winner(alive[0]);
-        message.textContent="⏱️ ¡Se acabó el tiempo! Gana "+racers[alive[0]].name+" por posición.";
+        message.textContent="⏱️ ¡Se acabó el tiempo! Gana "+racers[alive[0]].flag+" por posición.";
       }else{
         finished=true; running=false;
         message.textContent="💥 ¡Todos los autos quedaron fuera!";
