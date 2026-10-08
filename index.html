@@ -688,6 +688,129 @@
     const n=Number(e.key);
     if(n>=1 && n<=5) turbo(n-1);
   });
+  // =========================================================
+  // BANDA SONORA ORIGINAL — generada en el navegador
+  // No usa canciones ni archivos de terceros.
+  // =========================================================
+  const musicToggle = document.getElementById("musicToggle");
+  let audioCtx = null;
+  let masterGain = null;
+  let musicTimer = null;
+  let musicOn = false;
+  let musicNextTime = 0;
+  let musicStep = 0;
+
+  function setupMusic(){
+    if(audioCtx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    audioCtx = new AC();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.075;
+    masterGain.connect(audioCtx.destination);
+  }
+
+  function synthTone(time,freq,duration,type,volume,cutoff){
+    if(!audioCtx) return;
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+    const filter=audioCtx.createBiquadFilter();
+    osc.type=type;
+    osc.frequency.setValueAtTime(freq,time);
+    filter.type="lowpass";
+    filter.frequency.setValueAtTime(cutoff||5000,time);
+    gain.gain.setValueAtTime(0.0001,time);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002,volume),time+0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001,time+duration);
+    osc.connect(filter);filter.connect(gain);gain.connect(masterGain);
+    osc.start(time);osc.stop(time+duration+0.03);
+  }
+
+  function kick(time){
+    if(!audioCtx) return;
+    const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+    osc.type="sine";
+    osc.frequency.setValueAtTime(125,time);
+    osc.frequency.exponentialRampToValueAtTime(48,time+0.12);
+    gain.gain.setValueAtTime(0.0001,time);
+    gain.gain.exponentialRampToValueAtTime(0.45,time+0.004);
+    gain.gain.exponentialRampToValueAtTime(0.0001,time+0.15);
+    osc.connect(gain);gain.connect(masterGain);
+    osc.start(time);osc.stop(time+0.17);
+  }
+
+  function noiseHit(time,level,duration,highpass){
+    if(!audioCtx) return;
+    const buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*duration,audioCtx.sampleRate);
+    const data=buffer.getChannelData(0);
+    for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*(1-i/data.length);
+    const src=audioCtx.createBufferSource(),gain=audioCtx.createGain(),filter=audioCtx.createBiquadFilter();
+    filter.type="highpass";filter.frequency.value=highpass;
+    gain.gain.setValueAtTime(0.0001,time);
+    gain.gain.exponentialRampToValueAtTime(level,time+0.002);
+    gain.gain.exponentialRampToValueAtTime(0.0001,time+duration);
+    src.buffer=buffer;src.connect(filter);filter.connect(gain);gain.connect(masterGain);
+    src.start(time);src.stop(time+duration+0.01);
+  }
+
+  const bassPattern=[55,55,65.41,73.42,55,55,49,65.41,55,55,65.41,82.41,73.42,65.41,49,55];
+  const arpPattern=[220,261.63,329.63,392,329.63,261.63,220,196,220,329.63,392,523.25,392,329.63,261.63,220];
+
+  function scheduleMusic(){
+    if(!audioCtx || !musicOn) return;
+    const lookAhead=0.20;
+    const stepDur=60/128/2;
+    while(musicNextTime < audioCtx.currentTime + lookAhead){
+      const s=musicStep%16;
+      if(s%4===0) kick(musicNextTime);
+      if(s%4===2) noiseHit(musicNextTime,0.20,0.12,1200);
+      noiseHit(musicNextTime,0.045,0.045,6500);
+      if(s%4===3) noiseHit(musicNextTime,0.08,0.09,6500);
+      synthTone(musicNextTime,bassPattern[s],0.17,"sawtooth",0.055,900);
+      if(s%2===0) synthTone(musicNextTime,arpPattern[s],0.13,"square",0.018,2200);
+      if(s===7 || s===15) synthTone(musicNextTime,arpPattern[(s+3)%16]*2,0.10,"triangle",0.018,4000);
+      musicStep++;
+      musicNextTime+=stepDur;
+    }
+  }
+
+  async function startMusic(){
+    setupMusic();
+    if(!audioCtx) return;
+    try{
+      await audioCtx.resume();
+      musicOn=true;
+      musicToggle.textContent="🔊";
+      musicToggle.classList.add("on");
+      musicNextTime=audioCtx.currentTime+0.05;
+      clearInterval(musicTimer);
+      musicTimer=setInterval(scheduleMusic,70);
+      scheduleMusic();
+    }catch(e){}
+  }
+
+  function stopMusic(){
+    musicOn=false;
+    clearInterval(musicTimer);
+    musicTimer=null;
+    if(masterGain && audioCtx){
+      const now=audioCtx.currentTime;
+      masterGain.gain.cancelScheduledValues(now);
+      masterGain.gain.setTargetAtTime(0,now,0.03);
+    }
+    musicToggle.textContent="🔇";
+    musicToggle.classList.remove("on");
+  }
+
+  musicToggle.addEventListener("click",e=>{
+    e.stopPropagation();
+    if(musicOn) stopMusic(); else startMusic();
+  });
+
+  // Intento de reproducción automática. Si el navegador embebido la bloquea,
+  // toca el icono 🔇 de la esquina superior derecha una sola vez.
+  setTimeout(()=>startMusic(),900);
+
   // CONTROL REMOTO REAL PARA TIKTOK LIVE STUDIO
   // En modo local, la carrera escucha órdenes mediante un pequeño servidor
   // en tu PC. Esto funciona aunque TikTok LIVE Studio y Chrome sean contextos
