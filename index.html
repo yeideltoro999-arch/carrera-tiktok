@@ -56,10 +56,15 @@
   .lane.bra-lane{border-left:7px solid #ffdf00}
   .lane.col-lane{border-left:7px solid #fcd116}
   .lane-info{
-    position:absolute;left:8px;top:9px;width:132px;z-index:8;
-    background:rgba(20,30,38,.82);border:2px solid rgba(255,255,255,.5);
-    border-radius:11px;padding:5px 7px;text-align:center;
-    box-shadow:0 4px 10px rgba(0,0,0,.25);
+    position:absolute;left:4px;top:5px;width:34px;z-index:8;
+    background:rgba(20,30,38,.72);border:1px solid rgba(255,255,255,.45);
+    border-radius:8px;padding:3px;text-align:center;
+    box-shadow:0 3px 8px rgba(0,0,0,.2);
+  }
+  .starting-flag{
+    position:absolute;left:3px;top:24px;z-index:8;
+    font-size:30px;line-height:1;
+    filter:drop-shadow(2px 3px 2px rgba(0,0,0,.35));
   }
   .lane-rank{font-size:12px;font-weight:900;display:block}
   .lane-country{font-size:26px;font-weight:900;display:block;white-space:nowrap;line-height:1}
@@ -212,8 +217,9 @@
   @media(max-width:700px){
     #app{padding:5px}.panel{padding:6px}.score{min-width:95px;font-size:12px}
     .lane{height:64px}.car{transform:scale(.72);transform-origin:left center;top:7px}
-    .lane-info{left:5px;top:7px;width:108px;padding:4px 5px}
-    .lane-country{font-size:22px}.lane-rank{font-size:10px}
+    .lane-info{left:3px;top:5px;width:30px;padding:2px}
+    .lane-country{display:none}.lane-rank{font-size:9px}
+    .starting-flag{left:2px;top:25px;font-size:25px}
     .country-tag{font-size:10px}.finish{width:20px}
   }
   @media(min-aspect-ratio:3/2){
@@ -319,7 +325,7 @@
     border-radius:7px;
   }
   .lane-rank{font-size:9px}
-  .lane-country{font-size:20px}
+  .lane-country{display:none}
   .lane-progress{height:3px;margin-top:2px}
   .car{
     width:86px;height:42px;
@@ -451,7 +457,7 @@
   const giftAdvantages = racers.map(()=>0);
   const maxHP=100;
   const hp = racers.map(()=>maxHP);
-  const positions = racers.map(()=>1);
+  const positions = racers.map(()=>8);
   const raceDuration=30*60*1000;
   const burstUntil = racers.map(()=>0);
   const lastRanks = racers.map(()=>5);
@@ -476,12 +482,12 @@
       <div class="start"></div>
       <div class="lane-info">
         <span class="lane-rank" id="laneRank-${i}">5.º</span>
-        <span class="lane-country">${r.flag}</span>
+        
         <div class="lane-progress"><div class="lane-progress-fill" id="progress-${i}" style="background:var(--country-${i},#fff)"></div></div>
       </div>
-      <div class="car ${r.cls}" id="car-${i}" aria-label="${r.name}">
+            <div class="starting-flag" aria-label="${r.name}">${r.flag}</div>
+      <div class="car ${r.cls}" id="car-${i}" aria-label="Auto ${i+1}">
         <div class="position-chip" id="positionChip-${i}">5.º</div>
-        <div class="country-tag" title="${r.name}">${r.flag}</div>
         <div class="health"><div class="health-fill" id="health-${i}"></div></div>
         <div class="health-text" id="healthText-${i}">100 de vida</div>
         <div class="body"><div class="stripe"></div></div>
@@ -543,7 +549,7 @@
         if(!o.dataset.hit && Math.abs(carLeft-obstacleLeft)<3.2){
           o.dataset.hit="1";
           damageCar(i,5);
-          message.textContent="💥 ¡"+r.flag+" "+r.name+" golpeó un obstáculo! -5 puntos de vida";
+          message.textContent="💥 ¡"+r.flag+" GOLPEÓ UN OBSTÁCULO! -5 puntos de vida";
           o.style.opacity=".45";
         }
       });
@@ -562,7 +568,7 @@
     giftAdvantages[i] += 60 * 1000;
 
     const minutes = Math.floor(giftAdvantages[i] / 60000);
-    message.textContent = "🎁 ¡" + giftName + " para " + racers[i].name +
+    message.textContent = "🎁 ¡" + giftName + " " + racers[i].flag +
       "! +" + Math.round(advance) + "% de avance · ⏱️ " + minutes + " min de ventaja";
 
     if(positions[i] >= 90){
@@ -607,7 +613,7 @@
   }
 
   function resetPositions(){
-    for(let i=0;i<positions.length;i++){ positions[i]=1; hp[i]=maxHP; }
+    for(let i=0;i<positions.length;i++){ positions[i]=8; hp[i]=maxHP; }
     finished=false;
     likes=0; obstacleCount=0; nextObstacleLikes=25;
     for(let i=0;i<giftAdvantages.length;i++) giftAdvantages[i]=0;
@@ -647,7 +653,7 @@
       if(performance.now() < burstUntil[i]) base += 0.0030;
       if(Math.random()<0.0018) {
         burstUntil[i]=performance.now()+1400+Math.random()*1400;
-        message.textContent="🔥 ¡"+r.flag+" "+r.name+" ENTRA EN MODO TURBO!";
+        message.textContent="🔥 ¡"+r.flag+" ENTRA EN MODO TURBO!";
       }
 
       // Recuperación suave para que los últimos no queden demasiado lejos.
@@ -677,7 +683,7 @@
           return pb-pa;
         });
         winner(alive[0]);
-        message.textContent="⏱️ ¡Se acabó el tiempo! Gana "+racers[alive[0]].flag+" por posición.";
+        message.textContent="⏱️ ¡SE ACABÓ EL TIEMPO! GANA "+racers[alive[0]].flag+" POR POSICIÓN.";
       }else{
         finished=true; running=false;
         message.textContent="💥 ¡Todos los autos quedaron fuera!";
@@ -704,7 +710,7 @@
     if(finished) return;
     positions[i]=Math.min(90,positions[i]+2.5+Math.random()*2.5);
     if(positions[i]>=90) winner(i);
-    else message.textContent="⚡ ¡Turbo para "+racers[i].flag+" "+racers[i].name+"!";
+    else message.textContent="⚡ ¡TURBO PARA "+racers[i].flag+"!";
     render();
   }
 
