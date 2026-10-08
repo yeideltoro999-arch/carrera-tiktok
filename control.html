@@ -62,7 +62,17 @@ function connect(){
   try{
     setStatus("⏳ CONECTANDO CON LA CARRERA...",false);
     socket=new WebSocket(WS_URL);
-    socket.onopen=()=>setStatus("🟢 CONTROL CONECTADO A LA CARRERA",true);
+    socket.onopen=()=>{
+      setStatus("🟡 SERVIDOR CONECTADO — ESPERANDO CARRERA...",true);
+    };
+    socket.onmessage=(event)=>{
+      try{
+        const data=JSON.parse(event.data);
+        if(data.type==="race_online" && data.token==="goma6-race"){
+          setStatus("🟢 CARRERA CONECTADA — LISTO PARA CONTROLAR",true);
+        }
+      }catch(e){}
+    };
     socket.onclose=()=>{
       setStatus("🔴 CONTROL DESCONECTADO — REINTENTANDO...",false);
       clearTimeout(retry); retry=setTimeout(connect,1200);
@@ -82,7 +92,7 @@ function send(data){
   socket.send(JSON.stringify(data));
   setStatus("✅ ORDEN ENVIADA",true);
   setTimeout(()=>{
-    if(socket && socket.readyState===WebSocket.OPEN) setStatus("🟢 CONTROL CONECTADO A LA CARRERA",true);
+    if(socket && socket.readyState===WebSocket.OPEN) setStatus("🟡 ORDEN ENVIADA — CARRERA CONECTADA",true);
   },800);
 }
 function gift(i){send({type:"gift",index:i})}
