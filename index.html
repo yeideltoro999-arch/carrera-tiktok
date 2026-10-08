@@ -504,6 +504,21 @@
     const n=Number(e.key);
     if(n>=1 && n<=5) turbo(n-1);
   });
+  // Control externo: permite manejar la carrera desde control.html
+  // usando BroadcastChannel en el mismo dominio de GitHub Pages.
+  const controlChannel = new BroadcastChannel("carrera-tiktok-control");
+  controlChannel.onmessage = (event) => {
+    const data = event.data || {};
+    switch(data.type){
+      case "start": start(); break;
+      case "stop": stop(); break;
+      case "reset": stop(); resetPositions(); message.textContent="¡Carrera reiniciada!"; break;
+      case "gift": giftToCountry(Number(data.index), racers[Number(data.index)]?.gift); break;
+      case "like": addLikes(Number(data.amount)||25); break;
+      case "turbo": turbo(Number(data.index)); break;
+    }
+  };
+
   render();
 
   // La carrera comienza automáticamente al cargar el overlay,
