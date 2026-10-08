@@ -849,6 +849,8 @@
       controlSocket = new WebSocket(CONTROL_WS_URL);
       controlSocket.onopen = ()=>{
         document.title = "🏁 Carrera conectada";
+        // Avisamos al panel de control que la carrera está realmente cargada.
+        controlSocket.send(JSON.stringify({type:"race_online",token:"goma6-race"}));
       };
       controlSocket.onmessage = (event)=>{
         try{
