@@ -504,26 +504,75 @@
     const n=Number(e.key);
     if(n>=1 && n<=5) turbo(n-1);
   });
-  // Control externo: permite manejar la carrera desde control.html
-  // usando BroadcastChannel en el mismo dominio de GitHub Pages.
-  const controlChannel = new BroadcastChannel("carrera-tiktok-control");
-  controlChannel.onmessage = (event) => {
-    const data = event.data || {};
+  // CONTROL REMOTO REAL PARA TIKTOK LIVE STUDIO
+  // En modo local, la carrera escucha órdenes mediante un pequeño servidor
+  // en tu PC. Esto funciona aunque TikTok LIVE Studio y Chrome sean contextos
+  // separados. En GitHub Pages dejamos BroadcastChannel como respaldo.
+  const LOCAL_MODE = location.hostname === "127.0.0.1" || location.hostname === "localhost";
+  let lastCommandId = 0;
+  let controlPolling = null;
+
+  function applyControlCommand(data){
+    if(!data) return;
+    const idx = Number(data.index);
     switch(data.type){
       case "start": start(); break;
       case "stop": stop(); break;
-      case "reset": stop(); resetPositions(); message.textContent="¡Carrera reiniciada!"; break;
-      case "gift": giftToCountry(Number(data.index), racers[Number(data.index)]?.gift); break;
+      case "reset":
+        stop(); resetPositions(); message.textContent="¡Carrera reiniciada!";
+        break;
+      case "gift":
+        if(Number.isInteger(idx) && idx>=0 && idx<racers.length){
+          giftToCountry(idx, racers[idx].gift);
+        }
+        break;
       case "like": addLikes(Number(data.amount)||25); break;
-      case "turbo": turbo(Number(data.index)); break;
+      case "turbo":
+        if(Number.isInteger(idx) && idx>=0 && idx<racers.length) turbo(idx);
+        break;
     }
-  };
+  }
+
+  async function pollLocalControl(){
+    try{
+      const res = await fetch("/events?after="+lastCommandId, {cache:"no-store"});
+      if(!res.ok) return;
+      const payload = await res.json();
+      (payload.events || []).forEach(ev=>{
+        lastCommandId = Math.max(lastCommandId, Number(ev.id)||0);
+        applyControlCommand(ev.data);
+      });
+    }catch(e){
+      // El servidor puede tardar unos milisegundos en iniciar.
+    }
+  }
+
+  async function initLocalControl(){
+    try{
+      const res = await fetch("/events?init=1", {cache:"no-store"});
+      if(res.ok){
+        const payload = await res.json();
+        lastCommandId = Number(payload.latest)||0;
+      }
+      await pollLocalControl();
+    }catch(e){}
+    controlPolling = setInterval(pollLocalControl, 180);
+  }
+
+  if(LOCAL_MODE){
+    initLocalControl();
+  }else{
+    try{
+      const controlChannel = new BroadcastChannel("carrera-tiktok-control");
+      controlChannel.onmessage = (event)=>applyControlCommand(event.data || {});
+    }catch(e){}
+  }
 
   render();
 
-  // La carrera comienza automáticamente al cargar el overlay,
-  // así no necesitas encontrar el botón dentro de LIVE Studio.
-  setTimeout(()=>start(),500);
+  // El modo local queda esperando a que pulses INICIAR.
+  // La versión pública de GitHub mantiene el arranque automático.
+  if(!LOCAL_MODE) setTimeout(()=>start(),500);
 })();
 </script>
 </body>
